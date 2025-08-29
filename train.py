@@ -12,6 +12,8 @@ from transformers import (
     Qwen2VLForConditionalGeneration
 )
 
+import evaluate
+
 from qwen_vl_utils import process_vision_info
 
 from peft import LoraConfig, get_peft_model
@@ -60,7 +62,10 @@ from config import dataset_config, model_config as mc
 # 加载数据集
 dataset = load_from_disk('./data.hf')
 
-#----------------------模型加载----------------------
+
+metric = evaluate.load("accuracy")
+
+#------------------------------------------超参数配置-----------------------------------------------
 
 
 
@@ -84,7 +89,7 @@ training_args.gradient_checkpointing_kwargs = {"use_reentrant": False}
 training_args.dataset_kwargs = {"skip_prepare_dataset": True}
 # training_args.logging_steps = 10
 # training_args.save_steps = 100
-training_args.evaluation_strategy = "steps"
+training_args.evaluation_strategy = "epoch"
 # training_args.eval_steps = 100
 training_args.evaluation_strategy = 'no'  # 限制训练步数
 
@@ -106,6 +111,9 @@ model_kwargs = dict(
     quantization_config = quantization_config,
 )
 
+
+#------------------------------------------模型加载-----------------------------------------------
+
 os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 
 processor = AutoProcessor.from_pretrained(
@@ -122,7 +130,7 @@ model = Qwen2VLForConditionalGeneration.from_pretrained(
 # model.print_trainable_parameters()
 
 
-
+#------------------------------------------数据处理-----------------------------------------------
 
 def collate_fn(examples):
 
@@ -148,7 +156,16 @@ def collate_fn(examples):
     return batch
 
 
+#------------------------------------------评估函数-----------------------------------------------
 
+
+def compute_metrics(eval_pred):
+    logits, labels = eval_pred
+    predictions = np.argmax(logits, axis=-1)
+    return metric.compute(predictions=predictions, references=labels)
+
+
+#------------------------------------------开始训练-----------------------------------------------
 
 trainer = SFTTrainer(
     model = model,
@@ -157,6 +174,7 @@ trainer = SFTTrainer(
     train_dataset = dataset['train'],
     eval_dataset = dataset['test'],
     processing_class = processor.tokenizer,
+    compute_metrics=compute_metrics,
     # peft_config = lora_config
 )
 
@@ -175,46 +193,3 @@ trainer.save_metrics("train", metrics)
 # 保存训练状态
 trainer.save_state()
 
-
-
-
-
-
-
-
-# messages = [
-#     {
-#         "role": "user",
-#         "content": [
-#             {
-#                 "type": "image",
-#                 "image": "https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen-VL/assets/demo.jpeg",
-#             },
-#             {"type": "text", "text": "Describe this image."},
-#         ],
-#     }
-# ]
-
-# # Preparation for inference
-# text = processor.apply_chat_template(
-#     messages, tokenize=False, add_generation_prompt=True
-# )
-# image_inputs, video_inputs = process_vision_info(messages)
-# inputs = processor(
-#     text=[text],
-#     images=image_inputs,
-#     videos=video_inputs,
-#     padding=True,
-#     return_tensors="pt",
-# )
-# inputs = inputs.to("cuda")
-
-# # Inference: Generation of the output
-# generated_ids = model.generate(**inputs, max_new_tokens=128)
-# generated_ids_trimmed = [
-#     out_ids[len(in_ids) :] for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
-# ]
-# output_text = processor.batch_decode(
-#     generated_ids_trimmed, skip_special_tokens=True, clean_up_tokenization_spaces=False
-# )
-# print(output_text)

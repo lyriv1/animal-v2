@@ -116,10 +116,13 @@ model_kwargs = dict(
 
 os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 
+
 processor = AutoProcessor.from_pretrained(
     mc.model_name,
     trust_remote_code = model_config.trust_remote_code
     )
+
+processor.image_processor.size = {"height": 224, "width": 224}
 
 model = Qwen2VLForConditionalGeneration.from_pretrained(
     mc.model_name, 

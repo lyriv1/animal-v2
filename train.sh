@@ -93,14 +93,14 @@
 
 accelerate launch --config_file=./scripts/deepspeed_zero3.yaml \
     train.py \
-    --per_device_train_batch_size 4 \
+    --per_device_train_batch_size 1 \
     --gradient_accumulation_steps 4 \
     --output_dir sft-Qwen2-VL-2b \
     --torch_dtype bfloat16 \
     --gradient_checkpointing \
-    --num_train_epochs 5 \
+    --num_train_epochs 3 \
     --save_strategy "steps" \
-    --save_steps 2000 \
+    --save_steps 1000 \
     --learning_rate 2e-5 \
     --save_total_limit 3 \
     --lr_scheduler_type cosine \

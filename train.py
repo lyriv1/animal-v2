@@ -122,7 +122,7 @@ processor = AutoProcessor.from_pretrained(
     trust_remote_code = model_config.trust_remote_code
     )
 
-processor.image_processor.size = {"height": 224, "width": 224}
+processor.image_processor.size = {"height": 128, "width": 128}
 
 model = Qwen2VLForConditionalGeneration.from_pretrained(
     mc.model_name, 

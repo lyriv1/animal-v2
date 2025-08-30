@@ -1,0 +1,11 @@
+transformers
+datasets
+accelerate
+deepspeed
+trl
+evaluate
+peft
+qwen_vl_utils
+hf-xet
+scikit-learn
+bitsandbytes

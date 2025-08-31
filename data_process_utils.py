@@ -93,7 +93,7 @@ class data_process:
             i['images'] = i.pop('image')
             i['messages'] = []
             i['messages'].append({'content': [{'index': None, 'text': i['conversations'][0]['value'].replace('<image>\n','')+'\n', 'type': 'text'},
-            {'index': 0, 'text': None, 'type': 'image'}],
+            {'index': 0, 'text': None, 'type': 'image',"resized_height": 280,"resized_width": 280}],
             'role': 'user'})
             i['messages'].append({'content': [{'index': None, 'text': i['conversations'][1]['value'], 'type': 'text'}],
             'role': 'assistant'})

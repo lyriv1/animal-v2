@@ -104,9 +104,20 @@ torch_dtype = (
 
 
 swanlab_callback = SwanLabCallback(
-    project="huggingface", 
-    experiment_name="TransformersTest"
+    project="Qwen2-VL-2b-Animal-Classification",
+    experiment_name="qwen2-vl-2b-animal-classification",
+    config={
+        "model": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct",
+        "dataset": "https://aistudio.baidu.com/datasetdetail/140388",
+        "github": "https://github.com/datawhalechina/self-llm",
+        "prompt": "this is a photo of a",
+        "train_data_number": len(dataset['train']),
+        "lora_rank": 64,
+        "lora_alpha": 16,
+        "lora_dropout": 0.05,
+    },
 )
+
 
 
 quantization_config = get_quantization_config(model_config)
@@ -119,46 +130,61 @@ model_kwargs = dict(
     quantization_config = quantization_config,
 )
 
+
+
+args = TrainingArguments(
+    output_dir="./output/Qwen2-VL-2B",
+    per_device_train_batch_size=4,
+    gradient_accumulation_steps=4,
+    logging_steps=10,
+    logging_first_step=5,
+    num_train_epochs=2,
+    save_steps=100,
+    learning_rate=1e-4,
+    save_on_each_node=True,
+    gradient_checkpointing=True,
+    report_to="none",
+)
+
 lora_config = LoraConfig(
-    r=16,  # LoRA的秩
-    lora_alpha=32,  # LoRA的alpha参数
-    target_modules=["q_proj", "v_proj", "k_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],  # 要应用LoRA的模块
-    lora_dropout=0.05,  # LoRA层的dropout
-    bias="none",  # 是否训练偏置
-    task_type=TaskType.CAUSAL_LM,  # 任务类型
+    task_type=TaskType.CAUSAL_LM,
+    target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    inference_mode=False,  # 训练模式
+    r=64,  # Lora 秩
+    lora_alpha=16,  # Lora alaph，具体作用参见 Lora 原理
+    lora_dropout=0.05,  # Dropout 比例
+    bias="none",
 )
 #------------------------------------------模型加载-----------------------------------------------
 
 os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
 
+tokenizer = AutoTokenizer.from_pretrained(mc.model_name, use_fast=False, trust_remote_code=True)
 
 processor = AutoProcessor.from_pretrained(
     mc.model_name,
     trust_remote_code = model_config.trust_remote_code
     )
 
-processor.image_processor.size = {"height": 128, "width": 128}
+processor.image_processor.size = {"height": 280, "width": 280}
+
 
 model = Qwen2VLForConditionalGeneration.from_pretrained(
-    mc.model_name, 
-    trust_remote_code = model_config.trust_remote_code, 
+    mc.model_name, trust_remote_code=True,
     **model_kwargs
 )
 
-model = get_peft_model(model, lora_config)
+# peft_model = get_peft_model(model, lora_config)
 
 
-model.print_trainable_parameters()
+# peft_model.print_trainable_parameters()
 
 
 #------------------------------------------数据处理-----------------------------------------------
 
 def collate_fn(examples):
 
-
     texts = [processor.apply_chat_template(example["messages"], tokenize = False) for example in examples]
-
-    texts = [i.replace('<\s>','</s>') for i in texts]
 
     images = [example["images"] for example in examples]
         
@@ -175,7 +201,6 @@ def collate_fn(examples):
     batch["labels"] = labels
 
     return batch
-
 
 #------------------------------------------评估函数-----------------------------------------------
 
@@ -196,7 +221,7 @@ trainer = SFTTrainer(
     eval_dataset = dataset['test'],
     processing_class = processor.tokenizer,
     compute_metrics=compute_metrics,
-    peft_config = lora_config,
+    # peft_config = lora_config,
     callbacks=[swanlab_callback],
 )
 

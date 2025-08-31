@@ -93,12 +93,12 @@
 
 accelerate launch --config_file=./scripts/deepspeed_zero3.yaml \
     train.py \
-    --per_device_train_batch_size 2 \
-    --gradient_accumulation_steps 128 \
+    --per_device_train_batch_size 4 \
+    --gradient_accumulation_steps 4 \
     --output_dir sft-Qwen2-VL-2b \
     --torch_dtype bfloat16 \
     --gradient_checkpointing \
-    --num_train_epochs 3 \
+    --num_train_epochs 2 \
     --save_strategy "steps" \
     --save_steps 1000 \
     --learning_rate 2e-5 \
@@ -107,7 +107,7 @@ accelerate launch --config_file=./scripts/deepspeed_zero3.yaml \
     --weight_decay 0.01 \
     --warmup_ratio 0.03 \
     --optim adamw_bnb_8bit \
-    --per_device_eval_batch_size 8 \
+    --per_device_eval_batch_size 4 \
     --logging_steps 10 \
     --logging_dir "./logs" \
     --report_to "tensorboard" 

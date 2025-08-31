@@ -9,3 +9,4 @@ qwen_vl_utils
 hf-xet
 scikit-learn
 bitsandbytes
+swanlab

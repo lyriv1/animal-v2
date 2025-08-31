@@ -13,10 +13,11 @@ from transformers import (
 )
 
 import evaluate
-
+import swanlab
+from swanlab.integration.transformers import SwanLabCallback
 from qwen_vl_utils import process_vision_info
 
-from peft import LoraConfig, get_peft_model
+from peft import LoraConfig, get_peft_model, TaskType
 
 from trl import (
     ModelConfig,
@@ -101,6 +102,13 @@ torch_dtype = (
     else getattr(torch, model_config.torch_dtype)
 )
 
+
+swanlab_callback = SwanLabCallback(
+    project="huggingface", 
+    experiment_name="TransformersTest"
+)
+
+
 quantization_config = get_quantization_config(model_config)
 
 model_kwargs = dict(
@@ -111,7 +119,14 @@ model_kwargs = dict(
     quantization_config = quantization_config,
 )
 
-
+lora_config = LoraConfig(
+    r=16,  # LoRA的秩
+    lora_alpha=32,  # LoRA的alpha参数
+    target_modules=["q_proj", "v_proj", "k_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],  # 要应用LoRA的模块
+    lora_dropout=0.05,  # LoRA层的dropout
+    bias="none",  # 是否训练偏置
+    task_type=TaskType.CAUSAL_LM,  # 任务类型
+)
 #------------------------------------------模型加载-----------------------------------------------
 
 os.environ['HF_ENDPOINT'] = 'https://hf-mirror.com'
@@ -130,7 +145,10 @@ model = Qwen2VLForConditionalGeneration.from_pretrained(
     **model_kwargs
 )
 
-# model.print_trainable_parameters()
+model = get_peft_model(model, lora_config)
+
+
+model.print_trainable_parameters()
 
 
 #------------------------------------------数据处理-----------------------------------------------
@@ -178,7 +196,8 @@ trainer = SFTTrainer(
     eval_dataset = dataset['test'],
     processing_class = processor.tokenizer,
     compute_metrics=compute_metrics,
-    # peft_config = lora_config
+    peft_config = lora_config,
+    callbacks=[swanlab_callback],
 )
 
 

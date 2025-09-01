@@ -174,7 +174,7 @@ model = Qwen2VLForConditionalGeneration.from_pretrained(
     **model_kwargs
 )
 
-# peft_model = get_peft_model(model, lora_config)
+peft_model = get_peft_model(model, lora_config)
 
 
 # peft_model.print_trainable_parameters()
@@ -185,6 +185,8 @@ model = Qwen2VLForConditionalGeneration.from_pretrained(
 def collate_fn(examples):
 
     texts = [processor.apply_chat_template(example["messages"], tokenize = False) for example in examples]
+
+    texts = [i.replace('<\s>','</s>') for i in texts]
 
     images = [example["images"] for example in examples]
         
@@ -221,7 +223,7 @@ trainer = SFTTrainer(
     eval_dataset = dataset['test'],
     processing_class = processor.tokenizer,
     compute_metrics=compute_metrics,
-    # peft_config = lora_config,
+    peft_config = lora_config,
     callbacks=[swanlab_callback],
 )
 

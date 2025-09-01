@@ -91,11 +91,10 @@
 
 
 
-accelerate launch --config_file=./scripts/deepspeed_zero3.yaml \
-    train.py \
+accelerate launch train.py \
     --per_device_train_batch_size 4 \
     --gradient_accumulation_steps 4 \
-    --output_dir sft-Qwen2-VL-2b \
+    --output_dir lora-Qwen2-VL-2b \
     --torch_dtype bfloat16 \
     --gradient_checkpointing \
     --num_train_epochs 2 \
@@ -106,7 +105,6 @@ accelerate launch --config_file=./scripts/deepspeed_zero3.yaml \
     --lr_scheduler_type cosine \
     --weight_decay 0.01 \
     --warmup_ratio 0.03 \
-    --optim adamw_bnb_8bit \
     --per_device_eval_batch_size 4 \
     --logging_steps 10 \
     --logging_dir "./logs" \

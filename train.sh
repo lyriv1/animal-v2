@@ -99,7 +99,7 @@ accelerate launch train.py \
     --gradient_checkpointing \
     --num_train_epochs 2 \
     --save_strategy "steps" \
-    --save_steps 1000 \
+    --save_steps 1500 \
     --learning_rate 2e-5 \
     --save_total_limit 3 \
     --lr_scheduler_type cosine \

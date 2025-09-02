@@ -1,4 +1,5 @@
 # 动物分类微调模型
+[![](https://raw.githubusercontent.com/SwanHubX/assets/main/badge2.svg)](https://swanlab.cn/@Lyriv/Qwen2-VL-2b-Animal-Classification/overview)
 
 ## 技术栈
 

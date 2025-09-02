@@ -3,6 +3,7 @@ logs/
 input/
 data.hf/
 __pycache__/
-temp/*
-sft-llava-1.6-7b-hf-customer2batch/
+temp/
+lora-Qwen2-VL-2b/
 *.zip
+swanlog/

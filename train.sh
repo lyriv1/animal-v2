@@ -92,20 +92,19 @@
 
 
 accelerate launch train.py \
-    --per_device_train_batch_size 4 \
-    --gradient_accumulation_steps 4 \
-    --output_dir lora-Qwen2-VL-2b \
+    --per_device_train_batch_size 1 \
+    --gradient_accumulation_steps 8 \
     --torch_dtype bfloat16 \
     --gradient_checkpointing \
     --num_train_epochs 2 \
     --save_strategy "steps" \
-    --save_steps 1500 \
-    --learning_rate 2e-5 \
+    --save_steps 3000 \
+    --learning_rate 1e-4 \
     --save_total_limit 3 \
     --lr_scheduler_type cosine \
     --weight_decay 0.01 \
     --warmup_ratio 0.03 \
-    --per_device_eval_batch_size 4 \
+    --per_device_eval_batch_size 1 \
     --logging_steps 10 \
     --logging_dir "./logs" \
     --report_to "tensorboard" 

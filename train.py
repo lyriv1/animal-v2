@@ -38,27 +38,27 @@ from data_process_utils import data_process
 from config import dataset_config, model_config as mc
 #----------------------数据加载与处理----------------------
 
-# train_res_json=data_process.img_label_process(dataset_config.train_data_path,dataset_config.edit_uuid_flag,'train')
-# test_res_json=data_process.img_label_process(dataset_config.test_data_path,dataset_config.edit_uuid_flag,'test')
+train_res_json=data_process.img_label_process(dataset_config.train_data_path,dataset_config.edit_uuid_flag,'train')
+test_res_json=data_process.img_label_process(dataset_config.test_data_path,dataset_config.edit_uuid_flag,'test')
 
 
-# data_process.edit_json(train_res_json,dataset_config.train_json_path,'train')
-# data_process.edit_json(test_res_json,dataset_config.test_json_path,'test')
+data_process.edit_json(train_res_json,dataset_config.train_json_path,'train')
+data_process.edit_json(test_res_json,dataset_config.test_json_path,'test')
 
-# train_dataset = Dataset.from_json("./temp/train.json")
-# test_dataset = Dataset.from_json("./temp/test.json")
+train_dataset = Dataset.from_json("./temp/train.json")
+test_dataset = Dataset.from_json("./temp/test.json")
 
-# dataset = DatasetDict({
-#     'train': train_dataset,
-#     'test': test_dataset
-# })
-
-
-# dataset = dataset.cast_column("images", Image_from_datasets())
-# # os.remove("data.hf")
+dataset = DatasetDict({
+    'train': train_dataset,
+    'test': test_dataset
+})
 
 
-# dataset.save_to_disk("./data.hf")
+dataset = dataset.cast_column("images", Image_from_datasets())
+# os.remove("data.hf")
+
+
+dataset.save_to_disk("./data.hf")
 
 # 加载数据集
 dataset = load_from_disk('./data.hf')
@@ -77,7 +77,7 @@ training_args.gradient_checkpointing_kwargs = dict(use_reentrant = False)
 training_args.remove_unused_columns = False
 training_args.dataset_kwargs = {"skip_prepare_dataset": True}
 
-
+training_args.output_dir = mc.output_dir
 training_args.gradient_checkpointing = True  
 training_args.gradient_checkpointing_kwargs = {"use_reentrant": False}
 # training_args.per_device_train_batch_size = 1  # 减小批次大小
@@ -106,7 +106,7 @@ torch_dtype = (
 
 swanlab_callback = SwanLabCallback(
     project="Qwen2-VL-2b-Animal-Classification",
-    experiment_name="qwen2-vl-2b-animal-classification",
+    experiment_name="LORA-finetune",
     config={
         "model": "https://huggingface.co/Qwen/Qwen2-VL-2B-Instruct",
         "dataset": "https://aistudio.baidu.com/datasetdetail/140388",
@@ -119,8 +119,6 @@ swanlab_callback = SwanLabCallback(
     },
 )
 
-
-
 quantization_config = get_quantization_config(model_config)
 
 model_kwargs = dict(
@@ -132,24 +130,9 @@ model_kwargs = dict(
 )
 
 
-
-args = TrainingArguments(
-    output_dir="./output/Qwen2-VL-2B",
-    per_device_train_batch_size=4,
-    gradient_accumulation_steps=4,
-    logging_steps=10,
-    logging_first_step=5,
-    num_train_epochs=2,
-    save_steps=100,
-    learning_rate=1e-4,
-    save_on_each_node=True,
-    gradient_checkpointing=True,
-    report_to="none",
-)
-
 lora_config = LoraConfig(
-    task_type=TaskType.CAUSAL_LM,
-    target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    task_type=TaskType.CAUSAL_LM, # 任务类型
+    target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"], 
     inference_mode=False,  # 训练模式
     r=64,  # Lora 秩
     lora_alpha=16,  # Lora alaph，具体作用参见 Lora 原理
@@ -167,7 +150,7 @@ processor = AutoProcessor.from_pretrained(
     trust_remote_code = model_config.trust_remote_code
     )
 
-processor.image_processor.size = {"height": 280, "width": 280}
+# processor.image_processor.size = {"height": 280, "width": 280}
 
 
 model = Qwen2VLForConditionalGeneration.from_pretrained(

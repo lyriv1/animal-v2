@@ -10,4 +10,6 @@ class dataset_config:
 
 class model_config:
     model_name = "Qwen/Qwen2-VL-2B-Instruct"
+    output_dir = "lora-Qwen2-VL-2b"
+
     # peft_model_path = "./lora-16"

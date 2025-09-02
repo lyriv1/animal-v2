@@ -81,6 +81,10 @@ class data_process:
 
 
     def edit_json(data,output_json,data_type):
+        output_json_dir = os.path.dirname(output_json)
+        if not os.path.exists(output_json_dir):
+            os.makedirs(output_json_dir)
+            print("成功创建目录：", output_json_dir)
         # if data_type == 'test':
         #     for i in data:
         #         i['images'] = i.pop('image')
